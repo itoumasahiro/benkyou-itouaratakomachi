@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const memberId = searchParams.get("memberId");
   const period = searchParams.get("period");
-  let query = supabaseAdmin
+  let query = getSupabaseAdmin()
     .from("study_goals")
     .select("*, subject:study_subjects(*)")
     .order("created_at");
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { member_id, subject_id, type, target_value, period } = body;
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("study_goals")
     .insert({ member_id, subject_id, type, target_value, period })
     .select("*, subject:study_subjects(*)")
@@ -32,7 +32,7 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  const { error } = await supabaseAdmin.from("study_goals").delete().eq("id", id);
+  const { error } = await getSupabaseAdmin().from("study_goals").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

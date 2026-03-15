@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 const MAX_SIZE = 350 * 1024; // 350KB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/heic"];
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const { data, error } = await supabaseAdmin.storage
+    const { data, error } = await getSupabaseAdmin().storage
       .from("score-images")
       .upload(path, buffer, {
         contentType: file.type,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const { data: urlData } = supabaseAdmin.storage.from("score-images").getPublicUrl(data.path);
+    const { data: urlData } = getSupabaseAdmin().storage.from("score-images").getPublicUrl(data.path);
     return NextResponse.json({ url: urlData.publicUrl });
   } catch (e) {
     return NextResponse.json({ error: "アップロードに失敗しました" }, { status: 500 });

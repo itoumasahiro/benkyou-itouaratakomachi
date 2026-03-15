@@ -1,13 +1,14 @@
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import StudyApp from "@/components/StudyApp";
 import { notFound } from "next/navigation";
 
 export default async function StudyPage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = await params;
+  const supabase = getSupabaseAdmin();
 
   const [memberRes, allMembersRes] = await Promise.all([
-    supabaseAdmin.from("study_members").select("*").eq("id", memberId).single(),
-    supabaseAdmin.from("study_members").select("*").order("role").order("created_at"),
+    supabase.from("study_members").select("*").eq("id", memberId).single(),
+    supabase.from("study_members").select("*").order("role").order("created_at"),
   ]);
 
   if (memberRes.error || !memberRes.data) return notFound();

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET() {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("study_rewards")
     .select("*")
     .eq("active", true)
@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { name, emoji, cost, description } = body;
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("study_rewards")
     .insert({ name, emoji, cost, description })
     .select()
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const body = await req.json();
   const { id, active } = body;
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("study_rewards")
     .update({ active })
     .eq("id", id)

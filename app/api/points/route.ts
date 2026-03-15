@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 // 残高計算
 async function getBalance(memberId: string): Promise<number> {
-  const { data } = await supabaseAdmin
+  const { data } = await getSupabaseAdmin()
     .from("study_points")
     .select("amount")
     .eq("to_member_id", memberId);
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const memberId = searchParams.get("memberId");
   if (!memberId) return NextResponse.json({ error: "memberId required" }, { status: 400 });
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("study_points")
     .select("*, from_member:study_members!study_points_from_member_id_fkey(*)")
     .eq("to_member_id", memberId)
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("study_points")
     .insert({ to_member_id, from_member_id, amount, reason, type: type ?? "earned" })
     .select("*, from_member:study_members!study_points_from_member_id_fkey(*)")

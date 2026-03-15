@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const memberId = searchParams.get("memberId");
-  let query = supabaseAdmin
+  let query = getSupabaseAdmin()
     .from("study_scores")
     .select("*, subject:study_subjects(*)")
     .order("date", { ascending: false });
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { member_id, subject_id, name, test_type, score, max, date, image_url } = body;
   const maxVal = max || 100;
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("study_scores")
     .insert({ member_id, subject_id, name, test_type: test_type || "other", score, max: maxVal, date, image_url: image_url || null })
     .select("*, subject:study_subjects(*)")
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   // テスト結果に応じてポイント付与（自己獲得として from_member_id = member_id）
   const points = calcPointsFromScore(score, maxVal);
-  await supabaseAdmin.from("study_points").insert({
+  await getSupabaseAdmin().from("study_points").insert({
     to_member_id: member_id,
     from_member_id: member_id,
     amount: points,

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const memberId = searchParams.get("memberId");
-  let query = supabaseAdmin
+  let query = getSupabaseAdmin()
     .from("study_logs")
     .select("*, subject:study_subjects(*)")
     .order("created_at", { ascending: false });
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { member_id, subject_id, minutes, date } = body;
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("study_logs")
     .insert({ member_id, subject_id, minutes, date })
     .select("*, subject:study_subjects(*)")
