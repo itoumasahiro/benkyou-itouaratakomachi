@@ -55,10 +55,6 @@ function getToday() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function isGanbattaCard(text: string) {
-  return text.startsWith("🎉がんばったよカード🎉");
-}
-
 function isOmikuji(text: string) {
   return text.startsWith("🎰 おみくじ");
 }
@@ -134,10 +130,6 @@ export default function ChatTab({ member }: Props) {
     await sendMessage(msg);
   };
 
-  const sendGanbattaCard = async () => {
-    await sendMessage("🎉がんばったよカード🎉\n今日もよくがんばったね！えらい！");
-  };
-
   const sendOmikuji = async () => {
     if (omikujiDone) return;
     const fortune = FORTUNE_MESSAGES[Math.floor(Math.random() * FORTUNE_MESSAGES.length)];
@@ -178,7 +170,7 @@ export default function ChatTab({ member }: Props) {
   let lastDay = "";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 240px)", minHeight: "400px" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100svh - 240px)", minHeight: "400px" }}>
       {/* メッセージ一覧 */}
       <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px", paddingBottom: "8px" }}>
         {messages.length === 0 && (
@@ -195,35 +187,6 @@ export default function ChatTab({ member }: Props) {
           const msgReactions = reactions[msg.id] ?? {};
           const activeReactions = REACTION_EMOJIS.filter((e) => (msgReactions[e]?.length ?? 0) > 0);
 
-          if (isGanbattaCard(msg.text)) {
-            return (
-              <div key={msg.id}>
-                {showDay && (
-                  <div style={{ textAlign: "center", fontSize: "11px", color: "#aaa", margin: "10px 0 6px", fontWeight: 700 }}>{day}</div>
-                )}
-                <div style={{ margin: "8px 4px", background: "linear-gradient(135deg, #f7971e, #ffd200)", borderRadius: "20px", padding: "18px 16px", textAlign: "center", boxShadow: "0 6px 20px rgba(247,151,30,0.35)" }}>
-                  <div style={{ fontSize: "32px", marginBottom: "6px" }}>🎉🎊🎉</div>
-                  <div style={{ fontWeight: 900, color: "white", fontSize: "17px", letterSpacing: "1px" }}>がんばったよカード</div>
-                  <div style={{ color: "white", fontSize: "13px", marginTop: "6px" }}>今日もよくがんばったね！えらい！</div>
-                  <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.8)", marginTop: "8px" }}>{m?.display_name} · {formatTime(msg.created_at)}</div>
-                  {activeReactions.length > 0 && (
-                    <div style={{ display: "flex", gap: "4px", justifyContent: "center", marginTop: "8px" }}>
-                      {activeReactions.map((e) => (
-                        <button key={e} onClick={() => toggleReaction(msg.id, e)} style={{ background: "rgba(255,255,255,0.3)", border: "none", borderRadius: "12px", padding: "2px 8px", fontSize: "12px", cursor: "pointer", fontWeight: 700, color: "white" }}>
-                          {e} {msgReactions[e].length}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ display: "flex", gap: "4px", justifyContent: "center", marginTop: "6px" }}>
-                    {REACTION_EMOJIS.map((e) => (
-                      <button key={e} onClick={() => toggleReaction(msg.id, e)} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "10px", padding: "2px 6px", fontSize: "14px", cursor: "pointer", opacity: 0.8 }}>{e}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            );
-          }
 
           if (isOmikuji(msg.text)) {
             const lines = msg.text.split("\n");
@@ -306,9 +269,6 @@ export default function ChatTab({ member }: Props) {
       <div style={{ background: "white", borderRadius: "18px", padding: "12px", boxShadow: "0 -4px 14px rgba(0,0,0,0.06)", marginTop: "8px" }}>
         {/* 特別ボタン */}
         <div style={{ display: "flex", gap: "6px", marginBottom: "10px", justifyContent: "center", flexWrap: "wrap" }}>
-          <button onClick={sendGanbattaCard} style={{ padding: "6px 12px", borderRadius: "14px", border: "none", background: "linear-gradient(135deg, #f7971e, #ffd200)", color: "white", fontWeight: 800, fontSize: "11px", cursor: "pointer" }}>
-            🎉 がんばったよ！
-          </button>
           <button onClick={sendPraise} style={{ padding: "6px 12px", borderRadius: "14px", border: "none", background: "linear-gradient(135deg, #a18cd1, #fbc2eb)", color: "white", fontWeight: 800, fontSize: "11px", cursor: "pointer" }}>
             💬 はげます
           </button>
