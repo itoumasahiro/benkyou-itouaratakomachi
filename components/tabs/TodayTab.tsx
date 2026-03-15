@@ -23,7 +23,7 @@ export default function TodayTab({ member, subjects, todos, todayLogs, today, on
   const [newTodo, setNewTodo] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id ?? "");
 
-  const todayTodos = todos.filter((t) => t.date === today);
+  const todayTodos = todos.filter((t) => t.date === today && t.record_type == null);
   const totalMinsToday = todayLogs.reduce((s, l) => s + l.minutes, 0);
   const completedToday = todayTodos.filter((t) => t.done).length;
 

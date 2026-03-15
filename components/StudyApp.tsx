@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { Member, Subject, Todo, StudyLog, Score } from "@/lib/types";
 import TodayTab from "./tabs/TodayTab";
-import TimerTab from "./tabs/TimerTab";
+import StudyTab from "./tabs/StudyTab";
 import ScoresTab from "./tabs/ScoresTab";
 import CalendarTab from "./tabs/CalendarTab";
 import StatsTab from "./tabs/StatsTab";
@@ -22,7 +22,7 @@ function formatDateLabel(dateStr: string) {
 
 const TABS = [
   { key: "today", icon: "📅", label: "今日" },
-  { key: "timer", icon: "⏱️", label: "タイマー" },
+  { key: "study", icon: "📚", label: "きろく" },
   { key: "scores", icon: "📝", label: "テスト" },
   { key: "calendar", icon: "🗓️", label: "カレンダー" },
   { key: "stats", icon: "📊", label: "まとめ" },
@@ -103,11 +103,14 @@ export default function StudyApp({ member, allMembers }: Props) {
     setTodos((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // 勉強ログ保存
-  const handleSaveLog = async (subjectId: string, minutes: number) => {
-    const res = await fetch("/api/study-logs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ member_id: member.id, subject_id: subjectId, minutes, date: today }) });
+  // 宿題・自習きろく保存
+  const handleSaveStudyRecord = async (subjectId: string, recordType: "homework" | "self_study", contentType: string) => {
+    const res = await fetch("/api/todos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ member_id: member.id, subject_id: subjectId, date: today, record_type: recordType, content_type: contentType }) });
     const data = await res.json();
-    if (data.id) setStudyLogs((prev) => [data, ...prev]);
+    if (data.id) {
+      setTodos((prev) => [data, ...prev]);
+      fetchData(); // ポイント残高を更新
+    }
   };
 
   // テスト点数追加（記録するとポイントが付与される。写真付きも可）
@@ -163,8 +166,8 @@ export default function StudyApp({ member, allMembers }: Props) {
       {tab === "today" && subjects.length > 0 && (
         <TodayTab member={member} subjects={subjects} todos={todos} todayLogs={todayLogs} today={today} onAddTodo={handleAddTodo} onToggleTodo={handleToggleTodo} onDeleteTodo={handleDeleteTodo} />
       )}
-      {tab === "timer" && subjects.length > 0 && (
-        <TimerTab member={member} subjects={subjects} studyLogs={studyLogs} today={today} onSaveLog={handleSaveLog} />
+      {tab === "study" && subjects.length > 0 && (
+        <StudyTab member={member} subjects={subjects} studyRecords={todos.filter((t) => t.record_type != null)} today={today} onSaveRecord={handleSaveStudyRecord} />
       )}
       {tab === "scores" && subjects.length > 0 && (
         <ScoresTab member={member} subjects={subjects} scores={scores} onAddScore={handleAddScore} />

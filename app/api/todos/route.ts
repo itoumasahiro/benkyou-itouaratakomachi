@@ -16,15 +16,47 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data);
 }
 
+const RECORD_POINTS: Record<string, number> = {
+  homework: 2,
+  self_study: 5,
+};
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { member_id, text, subject_id, date } = body;
+  const { member_id, text, subject_id, date, record_type, content_type } = body;
+
+  const isStudyRecord = record_type === "homework" || record_type === "self_study";
+  const insertData: Record<string, unknown> = {
+    member_id,
+    text: text ?? content_type ?? "",
+    subject_id,
+    date,
+    done: isStudyRecord ? true : false,
+    ...(record_type ? { record_type } : {}),
+    ...(content_type ? { content_type } : {}),
+  };
+
   const { data, error } = await getSupabaseAdmin()
     .from("study_todos")
-    .insert({ member_id, text, subject_id, date, done: false })
+    .insert(insertData)
     .select("*, subject:study_subjects(*)")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // 宿題・自習きろく時はポイントを自動付与
+  if (isStudyRecord) {
+    const points = RECORD_POINTS[record_type];
+    const subjectName = (data as { subject?: { name?: string } }).subject?.name ?? "";
+    const label = record_type === "homework" ? "宿題" : "じしゅう";
+    await getSupabaseAdmin().from("study_points").insert({
+      to_member_id: member_id,
+      from_member_id: member_id,
+      amount: points,
+      reason: `${subjectName} ${content_type} (${label})`,
+      type: "earned",
+    });
+  }
+
   return NextResponse.json(data);
 }
 

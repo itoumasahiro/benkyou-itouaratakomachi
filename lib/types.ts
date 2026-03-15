@@ -32,6 +32,8 @@ export interface Todo {
   done: boolean;
   date: string;
   created_at: string;
+  record_type?: "homework" | "self_study" | null;
+  content_type?: string | null;
   subject?: Subject;
 }
 
