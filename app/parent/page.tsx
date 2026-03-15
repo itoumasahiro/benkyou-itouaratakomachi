@@ -4,6 +4,17 @@ import { useRouter } from "next/navigation";
 import type { Member, Subject, StudyLog, Score, Todo } from "@/lib/types";
 import ChatTab from "@/components/tabs/ChatTab";
 
+interface RewardRequest {
+  id: number;
+  member_id: string;
+  status: string;
+  message: string | null;
+  parent_note: string | null;
+  created_at: string;
+  member: Member;
+  reward: { id: number; name: string; emoji: string; cost: number };
+}
+
 const EMOJI_OPTIONS = ["🦁", "🌸", "🐬", "🦊", "🐼", "🦋", "🌟", "🎯", "🚀", "🎨"];
 const COLOR_OPTIONS = ["#4ECDC4", "#FF6B6B", "#45B7D1", "#96CEB4", "#F7B731", "#f093fb", "#43cea2", "#185a9d", "#ff6b6b", "#a8edea"];
 
@@ -25,7 +36,10 @@ export default function ParentPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [childData, setChildData] = useState<MemberData[]>([]);
   const [currentParent, setCurrentParent] = useState<Member | null>(null);
-  const [tab, setTab] = useState<"dashboard" | "chat" | "members">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "chat" | "members" | "requests">("dashboard");
+  const [childBalances, setChildBalances] = useState<Record<string, number>>({});
+  const [pendingRequests, setPendingRequests] = useState<RewardRequest[]>([]);
+  const [pointForm, setPointForm] = useState<{ memberId: string; amount: string; reason: string } | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState({ display_name: "", emoji: "🦁", color: "#4ECDC4", role: "child", grade: "", school_level: "elementary" });
   const today = getToday();
@@ -53,6 +67,19 @@ export default function ParentPage() {
           })
         );
         setChildData(results);
+
+        // ポイント残高・リクエスト取得
+        const balances: Record<string, number> = {};
+        for (const m of data.filter((x: Member) => x.role === "child")) {
+          const pRes = await fetch(`/api/points?memberId=${m.id}`);
+          const pData = await pRes.json();
+          balances[m.id] = pData.balance ?? 0;
+        }
+        setChildBalances(balances);
+
+        const reqRes = await fetch("/api/reward-requests?status=pending");
+        const reqData = await reqRes.json();
+        if (Array.isArray(reqData)) setPendingRequests(reqData);
       });
   }, []);
 
@@ -86,12 +113,47 @@ export default function ParentPage() {
     setMembers((prev) => prev.filter((m) => m.id !== id));
   };
 
+  const handleGivePoints = async () => {
+    if (!pointForm || !currentParent || !pointForm.amount || !pointForm.reason) return;
+    await fetch("/api/points", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to_member_id: pointForm.memberId, from_member_id: currentParent.id, amount: Number(pointForm.amount), reason: pointForm.reason, type: "earned" }),
+    });
+    // チャット通知
+    const child = members.find((m) => m.id === pointForm.memberId);
+    await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ member_id: currentParent.id, text: `⭐ ${child?.display_name}に${pointForm.amount}ポイントあげたよ！「${pointForm.reason}」` }),
+    });
+    // 残高更新
+    setChildBalances((prev) => ({ ...prev, [pointForm.memberId]: (prev[pointForm.memberId] ?? 0) + Number(pointForm.amount) }));
+    setPointForm(null);
+  };
+
+  const handleRequestAction = async (requestId: number, status: "approved" | "rejected", note: string) => {
+    if (!currentParent) return;
+    await fetch("/api/reward-requests", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: requestId, status, parent_note: note, approved_by: currentParent.id }),
+    });
+    setPendingRequests((prev) => prev.filter((r) => r.id !== requestId));
+    // 残高再取得
+    const req = pendingRequests.find((r) => r.id === requestId);
+    if (req && status === "approved") {
+      setChildBalances((prev) => ({ ...prev, [req.member_id]: (prev[req.member_id] ?? 0) - req.reward.cost }));
+    }
+  };
+
   const getTodayMins = (data: MemberData) => data.logs.filter((l) => l.date === today).reduce((s, l) => s + l.minutes, 0);
   const getTodayDone = (data: MemberData) => data.todos.filter((t) => t.date === today && t.done).length;
   const getTodayTotal = (data: MemberData) => data.todos.filter((t) => t.date === today).length;
 
   const PARENT_TABS = [
     { key: "dashboard", icon: "📊", label: "みんな" },
+    { key: "requests", icon: "🎁", label: `たのみ${pendingRequests.length > 0 ? `(${pendingRequests.length})` : ""}` },
     { key: "chat", icon: "💬", label: "チャット" },
     { key: "members", icon: "👥", label: "メンバー" },
   ];
@@ -113,7 +175,7 @@ export default function ParentPage() {
       </div>
 
       {/* タブ */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "6px", marginBottom: "12px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", marginBottom: "12px" }}>
         {PARENT_TABS.map(({ key, icon, label }) => (
           <button key={key} onClick={() => setTab(key as typeof tab)} style={{ padding: "10px 4px", borderRadius: "14px", border: "none", fontWeight: 800, fontSize: "12px", cursor: "pointer", background: tab === key ? "white" : "rgba(255,255,255,0.45)", color: tab === key ? "#185a9d" : "#555", boxShadow: tab === key ? "0 4px 14px rgba(0,0,0,0.13)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
             <span style={{ fontSize: "18px" }}>{icon}</span>{label}
@@ -146,6 +208,53 @@ export default function ParentPage() {
                   <div style={{ fontSize: "10px", color: "#aaa" }}>タスク完了</div>
                 </div>
               </div>
+              {/* ポイント残高 + 付与ボタン */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", padding: "10px 12px", background: "linear-gradient(135deg, #fffbf0, #fff3cd)", borderRadius: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "18px" }}>⭐</span>
+                  <span style={{ fontWeight: 900, fontSize: "18px", color: "#F7B731" }}>{childBalances[d.member.id] ?? 0}</span>
+                  <span style={{ fontSize: "11px", color: "#aaa" }}>ポイント</span>
+                </div>
+                <button
+                  onClick={() => setPointForm({ memberId: d.member.id, amount: "", reason: "" })}
+                  style={{ padding: "7px 14px", borderRadius: "10px", border: "none", background: "linear-gradient(135deg, #F7B731, #ff9800)", color: "white", fontWeight: 800, fontSize: "12px", cursor: "pointer" }}
+                >
+                  ⭐ ポイントをあげる
+                </button>
+              </div>
+
+              {/* ポイント付与フォーム */}
+              {pointForm?.memberId === d.member.id && (
+                <div style={{ marginTop: "10px", padding: "12px", background: "#fffbf0", borderRadius: "12px", border: "2px solid #F7B731" }}>
+                  <div style={{ marginBottom: "8px" }}>
+                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>ポイント数</label>
+                    <div style={{ display: "flex", gap: "6px", marginTop: "4px", flexWrap: "wrap" }}>
+                      {[10, 20, 30, 50, 100].map((v) => (
+                        <button key={v} onClick={() => setPointForm({ ...pointForm, amount: String(v) })} style={{ padding: "5px 12px", borderRadius: "20px", border: `2px solid ${pointForm.amount === String(v) ? "#F7B731" : "#e5e7eb"}`, background: pointForm.amount === String(v) ? "#F7B731" : "white", color: pointForm.amount === String(v) ? "white" : "#555", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>
+                          {v}
+                        </button>
+                      ))}
+                      <input type="number" value={pointForm.amount} onChange={(e) => setPointForm({ ...pointForm, amount: e.target.value })} placeholder="その他" style={{ width: "60px", padding: "4px 8px", borderRadius: "10px", border: "2px solid #e5e7eb", fontSize: "12px", outline: "none" }} />
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: "10px" }}>
+                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>理由</label>
+                    <div style={{ display: "flex", gap: "6px", marginTop: "4px", flexWrap: "wrap" }}>
+                      {["算数がんばった！", "テスト合格！", "宿題おわった！", "自分から勉強した！", "毎日つづけた！"].map((r) => (
+                        <button key={r} onClick={() => setPointForm({ ...pointForm, reason: r })} style={{ padding: "4px 10px", borderRadius: "20px", border: `2px solid ${pointForm.reason === r ? "#43cea2" : "#e5e7eb"}`, background: pointForm.reason === r ? "#43cea2" : "white", color: pointForm.reason === r ? "white" : "#555", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                    <input value={pointForm.reason} onChange={(e) => setPointForm({ ...pointForm, reason: e.target.value })} placeholder="理由を入力..." style={{ display: "block", width: "100%", marginTop: "6px", padding: "8px 12px", borderRadius: "10px", border: "2px solid #e5e7eb", fontSize: "12px", boxSizing: "border-box", outline: "none" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button onClick={() => setPointForm(null)} style={{ flex: 1, padding: "9px", borderRadius: "10px", border: "2px solid #e5e7eb", background: "white", color: "#888", fontWeight: 700, cursor: "pointer", fontSize: "12px" }}>キャンセル</button>
+                    <button onClick={handleGivePoints} style={{ flex: 2, padding: "9px", borderRadius: "10px", border: "none", background: "linear-gradient(135deg, #F7B731, #ff9800)", color: "white", fontWeight: 800, cursor: "pointer", fontSize: "12px" }}>⭐ あげる！</button>
+                  </div>
+                </div>
+              )}
+
               {/* 教科別今日の勉強 */}
               {d.logs.filter((l) => l.date === today).length > 0 && (
                 <div style={{ marginTop: "10px" }}>
@@ -159,6 +268,22 @@ export default function ParentPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ごほうびリクエスト */}
+      {tab === "requests" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {pendingRequests.length === 0 ? (
+            <div style={{ background: "white", borderRadius: "18px", padding: "40px 16px", textAlign: "center", boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }}>
+              <div style={{ fontSize: "40px", marginBottom: "10px" }}>🎁</div>
+              <p style={{ color: "#aaa", fontSize: "13px" }}>いまはたのみがないよ</p>
+            </div>
+          ) : (
+            pendingRequests.map((req) => (
+              <RequestCard key={req.id} req={req} onAction={handleRequestAction} />
+            ))
+          )}
         </div>
       )}
 
@@ -249,6 +374,49 @@ export default function ParentPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function RequestCard({ req, onAction }: { req: RewardRequest; onAction: (id: number, status: "approved" | "rejected", note: string) => void }) {
+  const [note, setNote] = useState("");
+  const [decided, setDecided] = useState(false);
+
+  const handle = async (status: "approved" | "rejected") => {
+    setDecided(true);
+    onAction(req.id, status, note);
+  };
+
+  if (decided) return null;
+
+  return (
+    <div style={{ background: "white", borderRadius: "18px", padding: "16px", boxShadow: "0 4px 14px rgba(0,0,0,0.08)", border: "2px solid #F7B73130" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+        <div style={{ fontSize: "36px" }}>{req.reward.emoji}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: "15px", fontWeight: 900 }}>{req.reward.name}</div>
+          <div style={{ fontSize: "12px", color: "#888" }}>
+            {req.member.emoji} {req.member.display_name} · ⭐ {req.reward.cost}ポイント
+          </div>
+        </div>
+      </div>
+      {req.message && (
+        <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "10px 12px", fontSize: "13px", color: "#555", marginBottom: "12px", fontStyle: "italic" }}>
+          「{req.message}」
+        </div>
+      )}
+      <div style={{ marginBottom: "12px" }}>
+        <label style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>ひとこと（なくてもOK）</label>
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="例：えらい！今週もがんばったね" style={{ display: "block", width: "100%", marginTop: "4px", padding: "9px 12px", borderRadius: "10px", border: "2px solid #e5e7eb", fontSize: "12px", boxSizing: "border-box", outline: "none" }} />
+      </div>
+      <div style={{ display: "flex", gap: "8px" }}>
+        <button onClick={() => handle("rejected")} style={{ flex: 1, padding: "11px", borderRadius: "12px", border: "2px solid #e5e7eb", background: "white", color: "#888", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}>
+          ❌ またこんど
+        </button>
+        <button onClick={() => handle("approved")} style={{ flex: 2, padding: "11px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg, #43cea2, #185a9d)", color: "white", fontWeight: 900, cursor: "pointer", fontSize: "13px" }}>
+          ✅ OK！あげる！
+        </button>
+      </div>
     </div>
   );
 }

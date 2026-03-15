@@ -8,6 +8,7 @@ import ScoresTab from "./tabs/ScoresTab";
 import CalendarTab from "./tabs/CalendarTab";
 import StatsTab from "./tabs/StatsTab";
 import ChatTab from "./tabs/ChatTab";
+import RewardsTab from "./tabs/RewardsTab";
 
 const DAYS_SHORT = ["日", "月", "火", "水", "木", "金", "土"];
 function getToday() {
@@ -25,6 +26,7 @@ const TABS = [
   { key: "scores", icon: "📝", label: "テスト" },
   { key: "calendar", icon: "🗓️", label: "カレンダー" },
   { key: "stats", icon: "📊", label: "まとめ" },
+  { key: "rewards", icon: "🎁", label: "ごほうび" },
   { key: "chat", icon: "💬", label: "チャット" },
 ];
 
@@ -40,24 +42,27 @@ export default function StudyApp({ member, allMembers }: Props) {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [studyLogs, setStudyLogs] = useState<StudyLog[]>([]);
   const [scores, setScores] = useState<Score[]>([]);
+  const [pointBalance, setPointBalance] = useState(0);
   const [allMembersData, setAllMembersData] = useState<{ member: Member; logs: StudyLog[]; scores: Score[]; todos: Todo[] }[]>([]);
   const today = getToday();
 
   // データ取得
   const fetchData = useCallback(async () => {
-    const [subRes, todoRes, logRes, scoreRes] = await Promise.all([
+    const [subRes, todoRes, logRes, scoreRes, pointRes] = await Promise.all([
       fetch(`/api/subjects?memberId=${member.id}`),
       fetch(`/api/todos?memberId=${member.id}`),
       fetch(`/api/study-logs?memberId=${member.id}`),
       fetch(`/api/scores?memberId=${member.id}`),
+      fetch(`/api/points?memberId=${member.id}`),
     ]);
-    const [subData, todoData, logData, scoreData] = await Promise.all([
-      subRes.json(), todoRes.json(), logRes.json(), scoreRes.json(),
+    const [subData, todoData, logData, scoreData, pointData] = await Promise.all([
+      subRes.json(), todoRes.json(), logRes.json(), scoreRes.json(), pointRes.json(),
     ]);
     if (Array.isArray(subData)) setSubjects(subData);
     if (Array.isArray(todoData)) setTodos(todoData);
     if (Array.isArray(logData)) setStudyLogs(logData);
     if (Array.isArray(scoreData)) setScores(scoreData);
+    if (pointData.balance !== undefined) setPointBalance(pointData.balance);
   }, [member.id]);
 
   // 全員データ（まとめタブ用）
@@ -126,9 +131,15 @@ export default function StudyApp({ member, allMembers }: Props) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ background: "linear-gradient(135deg, #f093fb, #f5576c)", borderRadius: "14px", padding: "6px 12px", color: "white", textAlign: "center" }}>
-            <div style={{ fontSize: "16px", fontWeight: 900 }}>⭐ {totalStars}</div>
-            <div style={{ fontSize: "9px" }}>スター</div>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <div style={{ background: "linear-gradient(135deg, #F7B731, #ff9800)", borderRadius: "14px", padding: "6px 10px", color: "white", textAlign: "center" }}>
+              <div style={{ fontSize: "14px", fontWeight: 900 }}>⭐ {pointBalance}</div>
+              <div style={{ fontSize: "9px" }}>ポイント</div>
+            </div>
+            <div style={{ background: "linear-gradient(135deg, #f093fb, #f5576c)", borderRadius: "14px", padding: "6px 10px", color: "white", textAlign: "center" }}>
+              <div style={{ fontSize: "14px", fontWeight: 900 }}>🌟 {totalStars}</div>
+              <div style={{ fontSize: "9px" }}>きろく</div>
+            </div>
           </div>
           <button onClick={() => router.push("/")} style={{ background: "#f9fafb", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "6px 10px", cursor: "pointer", fontSize: "11px", fontWeight: 700, color: "#555" }}>
             🔄 かえる
@@ -137,7 +148,7 @@ export default function StudyApp({ member, allMembers }: Props) {
       </div>
 
       {/* タブ */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: "4px", marginBottom: "12px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "3px", marginBottom: "12px" }}>
         {TABS.map(({ key, icon, label }) => (
           <button key={key} onClick={() => setTab(key)} style={{ padding: "7px 2px", borderRadius: "12px", border: "none", fontWeight: 800, fontSize: "9px", cursor: "pointer", background: tab === key ? "white" : "rgba(255,255,255,0.45)", color: tab === key ? member.color : "#555", boxShadow: tab === key ? "0 4px 14px rgba(0,0,0,0.13)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
             <span style={{ fontSize: "15px" }}>{icon}</span>{label}
@@ -160,6 +171,9 @@ export default function StudyApp({ member, allMembers }: Props) {
       )}
       {tab === "stats" && (
         <StatsTab member={member} subjects={subjects} studyLogs={studyLogs} scores={scores} todos={todos} allMembersData={allMembersData} />
+      )}
+      {tab === "rewards" && (
+        <RewardsTab member={member} balance={pointBalance} onBalanceChange={setPointBalance} />
       )}
       {tab === "chat" && (
         <ChatTab member={member} />
