@@ -7,3 +7,10 @@
 body {
   font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
 }
+
+/* iPad・タブレット横向き: 文字・ボタンを約25%拡大（devicePixelRatio 2x 対策） */
+@media (min-width: 768px) {
+  .tablet-scale {
+    zoom: 1.25;
+  }
+}
