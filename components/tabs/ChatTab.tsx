@@ -210,7 +210,7 @@ export default function ChatTab({ member }: Props) {
           onFocus={() => setOpenPanel(null)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(text)}
           placeholder="メッセージを入力..."
-          style={{ flex: 1, padding: "9px 13px", borderRadius: "20px", border: "2px solid #e5e7eb", fontSize: "13px", outline: "none", background: "#fafafa" }}
+          style={{ flex: 1, minWidth: 0, padding: "9px 13px", borderRadius: "20px", border: "2px solid #e5e7eb", fontSize: "13px", outline: "none", background: "#fafafa", boxSizing: "border-box" }}
         />
 
         {/* 😊ボタン */}
