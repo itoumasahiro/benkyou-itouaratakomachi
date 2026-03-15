@@ -158,10 +158,12 @@ export default function ParentPage() {
     { key: "members", icon: "👥", label: "メンバー" },
   ];
 
+  const isChatTab = tab === "chat";
+
   return (
-    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", minHeight: "100vh", background: "linear-gradient(160deg,#a8edea 0%,#fed6e3 100%)", padding: "14px", boxSizing: "border-box" }}>
+    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", background: "linear-gradient(160deg,#a8edea 0%,#fed6e3 100%)", padding: "14px", boxSizing: "border-box", ...(isChatTab ? { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflow: "hidden", display: "flex", flexDirection: "column" } : { minHeight: "100vh" }) }}>
       {/* ヘッダー */}
-      <div style={{ background: "white", borderRadius: "22px", padding: "12px 16px", marginBottom: "12px", boxShadow: "0 6px 24px rgba(0,0,0,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ background: "white", borderRadius: "22px", padding: "12px 16px", marginBottom: "12px", boxShadow: "0 6px 24px rgba(0,0,0,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center", ...(isChatTab ? { flexShrink: 0 } : {}) }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ fontSize: "28px" }}>{currentParent?.emoji ?? "👨"}</div>
           <div>
@@ -175,7 +177,7 @@ export default function ParentPage() {
       </div>
 
       {/* タブ */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", marginBottom: "12px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", marginBottom: "12px", ...(isChatTab ? { flexShrink: 0 } : {}) }}>
         {PARENT_TABS.map(({ key, icon, label }) => (
           <button key={key} onClick={() => setTab(key as typeof tab)} style={{ padding: "10px 4px", borderRadius: "14px", border: "none", fontWeight: 800, fontSize: "12px", cursor: "pointer", background: tab === key ? "white" : "rgba(255,255,255,0.45)", color: tab === key ? "#185a9d" : "#555", boxShadow: tab === key ? "0 4px 14px rgba(0,0,0,0.13)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
             <span style={{ fontSize: "18px" }}>{icon}</span>{label}
@@ -289,7 +291,9 @@ export default function ParentPage() {
 
       {/* チャット */}
       {tab === "chat" && currentParent && (
-        <ChatTab member={currentParent} />
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <ChatTab member={currentParent} />
+        </div>
       )}
 
       {/* メンバー管理 */}
