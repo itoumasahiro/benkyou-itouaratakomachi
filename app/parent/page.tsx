@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Member, Subject, StudyLog, Score, Todo } from "@/lib/types";
 import ChatTab from "@/components/tabs/ChatTab";
+import ParentProgressTab from "@/components/tabs/ParentProgressTab";
+import ParentTestsTab from "@/components/tabs/ParentTestsTab";
 
 interface RewardRequest {
   id: number;
@@ -36,7 +38,7 @@ export default function ParentPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [childData, setChildData] = useState<MemberData[]>([]);
   const [currentParent, setCurrentParent] = useState<Member | null>(null);
-  const [tab, setTab] = useState<"dashboard" | "chat" | "members" | "requests">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "chat" | "members" | "requests" | "progress" | "tests">("dashboard");
   const [childBalances, setChildBalances] = useState<Record<string, number>>({});
   const [pendingRequests, setPendingRequests] = useState<RewardRequest[]>([]);
   const [pointForm, setPointForm] = useState<{ memberId: string; amount: string; reason: string } | null>(null);
@@ -147,15 +149,18 @@ export default function ParentPage() {
     }
   };
 
-  const getTodayMins = (data: MemberData) => data.logs.filter((l) => l.date === today).reduce((s, l) => s + l.minutes, 0);
-  const getTodayDone = (data: MemberData) => data.todos.filter((t) => t.date === today && t.done).length;
-  const getTodayTotal = (data: MemberData) => data.todos.filter((t) => t.date === today).length;
+  const getTodayHomework  = (data: MemberData) => data.todos.filter((t) => t.date === today && t.record_type === "homework");
+  const getTodaySelfStudy = (data: MemberData) => data.todos.filter((t) => t.date === today && t.record_type === "self_study");
+  const getTodayDone  = (data: MemberData) => data.todos.filter((t) => t.date === today && !t.record_type && t.done).length;
+  const getTodayTotal = (data: MemberData) => data.todos.filter((t) => t.date === today && !t.record_type).length;
 
   const PARENT_TABS = [
     { key: "dashboard", icon: "📊", label: "みんな" },
+    { key: "progress", icon: "🔥", label: "がんばり" },
+    { key: "tests",    icon: "📝", label: "テスト" },
     { key: "requests", icon: "🎁", label: `たのみ${pendingRequests.length > 0 ? `(${pendingRequests.length})` : ""}` },
-    { key: "chat", icon: "💬", label: "チャット" },
-    { key: "members", icon: "👥", label: "メンバー" },
+    { key: "chat",     icon: "💬", label: "チャット" },
+    { key: "members",  icon: "👥", label: "メンバー" },
   ];
 
   const isChatTab = tab === "chat";
@@ -177,9 +182,9 @@ export default function ParentPage() {
       </div>
 
       {/* タブ */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", marginBottom: "12px", ...(isChatTab ? { flexShrink: 0 } : {}) }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: "6px", marginBottom: "12px", ...(isChatTab ? { flexShrink: 0 } : {}) }}>
         {PARENT_TABS.map(({ key, icon, label }) => (
-          <button key={key} onClick={() => setTab(key as typeof tab)} style={{ padding: "10px 4px", borderRadius: "14px", border: "none", fontWeight: 800, fontSize: "12px", cursor: "pointer", background: tab === key ? "white" : "rgba(255,255,255,0.45)", color: tab === key ? "#185a9d" : "#555", boxShadow: tab === key ? "0 4px 14px rgba(0,0,0,0.13)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+          <button key={key} onClick={() => setTab(key as typeof tab)} style={{ padding: "10px 4px", borderRadius: "14px", border: "none", fontWeight: 800, fontSize: "10px", cursor: "pointer", background: tab === key ? "white" : "rgba(255,255,255,0.45)", color: tab === key ? "#185a9d" : "#555", boxShadow: tab === key ? "0 4px 14px rgba(0,0,0,0.13)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
             <span style={{ fontSize: "18px" }}>{icon}</span>{label}
           </button>
         ))}
@@ -200,14 +205,18 @@ export default function ParentPage() {
                   <div style={{ fontSize: "11px", color: "#aaa" }}>{d.member.grade}</div>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <div style={{ background: "#f0fff8", borderRadius: "12px", padding: "12px", textAlign: "center" }}>
-                  <div style={{ fontSize: "22px", fontWeight: 900, color: "#43cea2" }}>{getTodayMins(d)}分</div>
-                  <div style={{ fontSize: "10px", color: "#aaa" }}>今日の勉強</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                <div style={{ background: "#f0fffe", borderRadius: "12px", padding: "12px", textAlign: "center" }}>
+                  <div style={{ fontSize: "22px", fontWeight: 900, color: "#4ECDC4" }}>{getTodayHomework(d).length}</div>
+                  <div style={{ fontSize: "10px", color: "#aaa" }}>📚 宿題</div>
+                </div>
+                <div style={{ background: "#fff5f5", borderRadius: "12px", padding: "12px", textAlign: "center" }}>
+                  <div style={{ fontSize: "22px", fontWeight: 900, color: "#f5576c" }}>{getTodaySelfStudy(d).length}</div>
+                  <div style={{ fontSize: "10px", color: "#aaa" }}>⭐ 自習</div>
                 </div>
                 <div style={{ background: "#f5f5ff", borderRadius: "12px", padding: "12px", textAlign: "center" }}>
                   <div style={{ fontSize: "22px", fontWeight: 900, color: "#185a9d" }}>{getTodayDone(d)}/{getTodayTotal(d)}</div>
-                  <div style={{ fontSize: "10px", color: "#aaa" }}>タスク完了</div>
+                  <div style={{ fontSize: "10px", color: "#aaa" }}>✅ タスク</div>
                 </div>
               </div>
               {/* ポイント残高 + 付与ボタン */}
@@ -257,13 +266,21 @@ export default function ParentPage() {
                 </div>
               )}
 
-              {/* 教科別今日の勉強 */}
-              {d.logs.filter((l) => l.date === today).length > 0 && (
+              {/* 今日の宿題・自習きろく詳細 */}
+              {(getTodayHomework(d).length > 0 || getTodaySelfStudy(d).length > 0) && (
                 <div style={{ marginTop: "10px" }}>
-                  {d.logs.filter((l) => l.date === today).map((log) => (
-                    <div key={log.id} style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", padding: "4px 0", borderBottom: "1px solid #f0f0f0" }}>
-                      <span>{log.subject?.emoji} {log.subject?.name}</span>
-                      <span style={{ fontWeight: 700, color: "#185a9d" }}>{log.minutes}分</span>
+                  {getTodayHomework(d).map((t) => (
+                    <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", padding: "5px 0", borderBottom: "1px solid #f0f0f0" }}>
+                      <span>📚</span>
+                      <span>{t.subject?.emoji} {t.subject?.name}</span>
+                      <span style={{ color: "#aaa" }}>{t.content_type}</span>
+                    </div>
+                  ))}
+                  {getTodaySelfStudy(d).map((t) => (
+                    <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", padding: "5px 0", borderBottom: "1px solid #f0f0f0" }}>
+                      <span>⭐</span>
+                      <span>{t.subject?.emoji} {t.subject?.name}</span>
+                      <span style={{ color: "#aaa" }}>{t.content_type}</span>
                     </div>
                   ))}
                 </div>
@@ -271,6 +288,16 @@ export default function ParentPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* がんばりタブ */}
+      {tab === "progress" && (
+        <ParentProgressTab childData={childData} />
+      )}
+
+      {/* テストタブ */}
+      {tab === "tests" && childData.length > 0 && (
+        <ParentTestsTab childData={childData} />
       )}
 
       {/* ごほうびリクエスト */}
