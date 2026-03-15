@@ -26,6 +26,22 @@ export async function POST(req: NextRequest) {
   const { member_id, text, subject_id, date, record_type, content_type } = body;
 
   const isStudyRecord = record_type === "homework" || record_type === "self_study";
+
+  // 1日1回制限：宿題・自習はその日すでに同じ種別の記録がある場合は拒否
+  if (isStudyRecord) {
+    const { data: existing } = await getSupabaseAdmin()
+      .from("study_todos")
+      .select("id")
+      .eq("member_id", member_id)
+      .eq("date", date)
+      .eq("record_type", record_type)
+      .limit(1);
+    if (existing && existing.length > 0) {
+      const label = record_type === "homework" ? "宿題" : "じしゅう";
+      return NextResponse.json({ error: `今日の${label}はもうきろくしたよ！` }, { status: 400 });
+    }
+  }
+
   const insertData: Record<string, unknown> = {
     member_id,
     text: text ?? content_type ?? "",

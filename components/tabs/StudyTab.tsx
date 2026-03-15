@@ -46,6 +46,7 @@ export default function StudyTab({ member, subjects, studyRecords, today, onSave
 
   const todayRecords = studyRecords.filter((r) => r.date === today);
   const pastRecords = studyRecords.filter((r) => r.date !== today);
+  const alreadyRecordedToday = todayRecords.some((r) => r.record_type === recordType);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -126,25 +127,31 @@ export default function StudyTab({ member, subjects, studyRecords, today, onSave
         </div>
 
         {/* 記録ボタン */}
-        <button
-          onClick={handleSave}
-          disabled={saving || saved}
-          style={{
-            width: "100%",
-            padding: "16px",
-            borderRadius: "50px",
-            border: "none",
-            background: saved ? "#43cea2" : `linear-gradient(135deg, ${member.color}, #185a9d)`,
-            color: "white",
-            fontWeight: 900,
-            fontSize: "17px",
-            cursor: saving || saved ? "default" : "pointer",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-            transition: "background 0.3s",
-          }}
-        >
-          {saved ? "✅ きろくしたよ！" : saving ? "..." : `${recordType === "homework" ? "📚" : "⭐"} きろくする (+${POINTS[recordType]}pt)`}
-        </button>
+        {alreadyRecordedToday ? (
+          <div style={{ width: "100%", padding: "16px", borderRadius: "50px", background: "#f0f0f0", color: "#999", fontWeight: 900, fontSize: "15px", textAlign: "center" }}>
+            ✅ 今日の{recordType === "homework" ? "宿題" : "じしゅう"}はもうきろくしたよ！
+          </div>
+        ) : (
+          <button
+            onClick={handleSave}
+            disabled={saving || saved}
+            style={{
+              width: "100%",
+              padding: "16px",
+              borderRadius: "50px",
+              border: "none",
+              background: saved ? "#43cea2" : `linear-gradient(135deg, ${member.color}, #185a9d)`,
+              color: "white",
+              fontWeight: 900,
+              fontSize: "17px",
+              cursor: saving || saved ? "default" : "pointer",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              transition: "background 0.3s",
+            }}
+          >
+            {saved ? "✅ きろくしたよ！" : saving ? "..." : `${recordType === "homework" ? "📚" : "⭐"} きろくする (+${POINTS[recordType]}pt)`}
+          </button>
+        )}
       </div>
 
       {/* 今日のきろく */}
