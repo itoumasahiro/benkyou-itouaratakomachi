@@ -8,6 +8,8 @@ function formatDateLabel(dateStr: string) {
   return `${d.getMonth() + 1}月${d.getDate()}日(${DAYS_SHORT[d.getDay()]})`;
 }
 
+const POINTS: Record<"homework" | "self_study", number> = { homework: 2, self_study: 5 };
+
 interface Props {
   member: Member;
   subjects: Subject[];
@@ -19,13 +21,15 @@ interface Props {
   onDeleteTodo: (id: number) => Promise<void>;
 }
 
-export default function TodayTab({ member, subjects, todos, todayLogs, today, onAddTodo, onToggleTodo, onDeleteTodo }: Props) {
+export default function TodayTab({ member, subjects, todos, today, onAddTodo, onToggleTodo, onDeleteTodo }: Props) {
   const [newTodo, setNewTodo] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id ?? "");
 
-  const todayTodos = todos.filter((t) => t.date === today && t.record_type == null);
-  const totalMinsToday = todayLogs.reduce((s, l) => s + l.minutes, 0);
-  const completedToday = todayTodos.filter((t) => t.done).length;
+  const todayTodos        = todos.filter((t) => t.date === today && t.record_type == null);
+  const todayHomework     = todos.filter((t) => t.date === today && t.record_type === "homework");
+  const todaySelfStudy    = todos.filter((t) => t.date === today && t.record_type === "self_study");
+  const completedToday    = todayTodos.filter((t) => t.done).length;
+  const studyRecordCount  = todayHomework.length + todaySelfStudy.length;
 
   const handleAdd = async () => {
     if (!newTodo.trim() || !selectedSubjectId) return;
@@ -35,17 +39,17 @@ export default function TodayTab({ member, subjects, todos, todayLogs, today, on
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+
       {/* サマリーカード */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        {[
-          { value: `${completedToday}/${todayTodos.length}`, label: "タスク完了", color: "#43cea2" },
-          { value: `${totalMinsToday}分`, label: "今日の勉強", color: "#f5576c" },
-        ].map((card) => (
-          <div key={card.label} style={{ background: "white", borderRadius: "16px", padding: "16px", textAlign: "center", boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }}>
-            <div style={{ fontSize: "30px", fontWeight: 900, color: card.color }}>{card.value}</div>
-            <div style={{ fontSize: "11px", color: "#aaa" }}>{card.label}</div>
-          </div>
-        ))}
+        <div style={{ background: "white", borderRadius: "16px", padding: "16px", textAlign: "center", boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }}>
+          <div style={{ fontSize: "30px", fontWeight: 900, color: "#43cea2" }}>{completedToday}/{todayTodos.length}</div>
+          <div style={{ fontSize: "11px", color: "#aaa" }}>タスク完了</div>
+        </div>
+        <div style={{ background: "white", borderRadius: "16px", padding: "16px", textAlign: "center", boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }}>
+          <div style={{ fontSize: "30px", fontWeight: 900, color: "#f5576c" }}>{studyRecordCount}件</div>
+          <div style={{ fontSize: "11px", color: "#aaa" }}>宿題・自習きろく</div>
+        </div>
       </div>
 
       {/* Todo追加 */}
@@ -98,18 +102,32 @@ export default function TodayTab({ member, subjects, todos, todayLogs, today, on
         ))}
       </div>
 
-      {/* 今日の勉強記録 */}
-      {todayLogs.length > 0 && (
+      {/* 今日の宿題・自習きろく */}
+      {studyRecordCount > 0 && (
         <div style={{ background: "white", borderRadius: "18px", padding: "16px", boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }}>
-          <h3 style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: 800, color: "#333" }}>⏱️ 今日の勉強きろく</h3>
-          {todayLogs.map((log) => (
-            <div key={log.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", marginBottom: "6px", borderRadius: "10px", background: "#f0fff8" }}>
-              <span>{log.subject?.emoji}</span>
-              <span style={{ flex: 1, fontSize: "13px", fontWeight: 700 }}>{log.subject?.name}</span>
-              <span style={{ fontWeight: 900, color: "#185a9d", fontSize: "14px" }}>{log.minutes}分</span>
+          <h3 style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: 800, color: "#333" }}>📚 今日のきろく</h3>
+          {todayHomework.map((t) => (
+            <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", marginBottom: "6px", borderRadius: "10px", background: "#f0fffe" }}>
+              <span style={{ fontSize: "16px" }}>📚</span>
+              <span style={{ fontSize: "16px" }}>{t.subject?.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "13px", fontWeight: 700 }}>{t.subject?.name}</div>
+                <div style={{ fontSize: "11px", color: "#aaa" }}>{t.content_type}</div>
+              </div>
+              <span style={{ fontWeight: 900, color: "#4ECDC4", fontSize: "13px" }}>+{POINTS.homework}pt</span>
             </div>
           ))}
-          <div style={{ textAlign: "right", fontSize: "13px", fontWeight: 900, color: "#43cea2", marginTop: "6px" }}>合計 {totalMinsToday}分</div>
+          {todaySelfStudy.map((t) => (
+            <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", marginBottom: "6px", borderRadius: "10px", background: "#fff5f5" }}>
+              <span style={{ fontSize: "16px" }}>⭐</span>
+              <span style={{ fontSize: "16px" }}>{t.subject?.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "13px", fontWeight: 700 }}>{t.subject?.name}</div>
+                <div style={{ fontSize: "11px", color: "#aaa" }}>{t.content_type}</div>
+              </div>
+              <span style={{ fontWeight: 900, color: "#f5576c", fontSize: "13px" }}>+{POINTS.self_study}pt</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
