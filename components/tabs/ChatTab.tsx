@@ -140,15 +140,15 @@ export default function ChatTab({ member }: Props) {
           return (
             <div key={msg.id}>
               {showDay && <div style={{ textAlign: "center", fontSize: "11px", color: "#aaa", margin: "10px 0 4px", fontWeight: 700 }}>{day}</div>}
-              <div style={{ display: "flex", flexDirection: isMe ? "row-reverse" : "row", alignItems: "flex-end", gap: "6px", marginBottom: "4px" }}>
+              <div style={{ display: "flex", flexDirection: isMe ? "row-reverse" : "row", alignItems: "flex-start", gap: "6px", marginBottom: "4px" }}>
                 {!isMe && (
-                  <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: m ? `${m.color}22` : "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", border: m ? `2px solid ${m.color}` : "2px solid #ddd", flexShrink: 0 }}>
+                  <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: m ? `${m.color}22` : "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", border: m ? `2px solid ${m.color}` : "2px solid #ddd", flexShrink: 0, marginTop: "2px" }}>
                     {m?.emoji ?? "👤"}
                   </div>
                 )}
                 <div style={{ maxWidth: "72%", display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", gap: "2px" }}>
                   {!isMe && <div style={{ fontSize: "12px", color: "#555", fontWeight: 700 }}>{m?.display_name}</div>}
-                  <div style={{ background: isMe ? `linear-gradient(135deg, ${member.color}, #185a9d)` : "white", color: isMe ? "white" : "#333", padding: "8px 12px", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px", fontSize: "13px", boxShadow: "0 2px 6px rgba(0,0,0,0.07)", wordBreak: "break-word", whiteSpace: "pre-line" }}>
+                  <div style={{ background: isMe ? `linear-gradient(135deg, ${member.color}, #185a9d)` : "white", color: isMe ? "white" : "#333", padding: "8px 12px", borderRadius: isMe ? "18px 4px 18px 18px" : "4px 18px 18px 18px", fontSize: "13px", boxShadow: "0 2px 6px rgba(0,0,0,0.07)", wordBreak: "break-word", whiteSpace: "pre-line" }}>
                     {msg.text}
                   </div>
                   <div style={{ fontSize: "10px", color: "#bbb" }}>{fmt(msg.created_at)}</div>
