@@ -110,11 +110,14 @@ export default function StudyApp({ member, allMembers }: Props) {
     if (data.id) setStudyLogs((prev) => [data, ...prev]);
   };
 
-  // テスト点数追加
-  const handleAddScore = async (subjectId: string, name: string, testType: string, score: number, max: number) => {
-    const res = await fetch("/api/scores", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ member_id: member.id, subject_id: subjectId, name, test_type: testType, score, max, date: today }) });
+  // テスト点数追加（記録するとポイントが付与される。写真付きも可）
+  const handleAddScore = async (subjectId: string, name: string, testType: string, score: number, max: number, imageUrl?: string) => {
+    const res = await fetch("/api/scores", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ member_id: member.id, subject_id: subjectId, name, test_type: testType, score, max, date: today, image_url: imageUrl }) });
     const data = await res.json();
-    if (data.id) setScores((prev) => [data, ...prev]);
+    if (data.id) {
+      setScores((prev) => [data, ...prev]);
+      fetchData(); // ポイント残高を更新
+    }
   };
 
   return (

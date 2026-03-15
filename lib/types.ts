@@ -55,6 +55,7 @@ export interface Score {
   max: number;
   date: string;
   created_at: string;
+  image_url?: string | null;
   subject?: Subject;
 }
 
