@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://xcdlxdvqvmzifsjjpzsa.supabase.co/rest/v1/\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjZGx4ZHZxdm16aWZzampwenNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzU3NjY1MCwiZXhwIjoyMDYzMTUyNjUwfQ.Q3r9Ydex7ENAKD1YSShbyeKNCyXKTUMZwxwxL2iOTec\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjZGx4ZHZxdm16aWZzampwenNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzU3NjY1MCwiZXhwIjoyMDYzMTUyNjUwfQ.Q3r9Ydex7ENAKD1YSShbyeKNCyXKTUMZwxwxL2iOTec\")",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(curl -s -X POST \"https://xcdlxdvqvmzifsjjpzsa.supabase.co/rest/v1/rpc/exec_sql\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjZGx4ZHZxdm16aWZzampwenNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzU3NjY1MCwiZXhwIjoyMDYzMTUyNjUwfQ.Q3r9Ydex7ENAKD1YSShbyeKNCyXKTUMZwxwxL2iOTec\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjZGx4ZHZxdm16aWZzampwenNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzU3NjY1MCwiZXhwIjoyMDYzMTUyNjUwfQ.Q3r9Ydex7ENAKD1YSShbyeKNCyXKTUMZwxwxL2iOTec\" -H \"Content-Type: application/json\" -d '{\"\"query\"\": \"\"SELECT 1\"\"}')",
+      "Bash(supabase --version)",
+      "Bash(supabase db:*)",
+      "Bash(supabase help:*)",
+      "Bash(npx next:*)"
+    ]
+  }
+}
