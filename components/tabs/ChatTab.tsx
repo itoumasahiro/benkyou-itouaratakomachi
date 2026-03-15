@@ -213,12 +213,12 @@ export default function ChatTab({ member }: Props) {
           style={{ flex: 1, minWidth: 0, padding: "9px 13px", borderRadius: "20px", border: "2px solid #e5e7eb", fontSize: "13px", outline: "none", background: "#fafafa", boxSizing: "border-box" }}
         />
 
-        {/* 😊ボタン */}
+        {/* 😊ボタン（テキストありなら送信、なければたのしいパネル） */}
         <button
-          onClick={() => togglePanel("fun")}
-          style={{ width: "36px", height: "36px", borderRadius: "50%", border: "none", background: openPanel === "fun" ? member.color : "#f0f0f0", fontSize: "18px", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => (text.trim() ? sendMessage(text) : togglePanel("fun"))}
+          style={{ width: "36px", height: "36px", borderRadius: "50%", border: "none", background: text.trim() ? `linear-gradient(135deg, ${member.color}, #185a9d)` : openPanel === "fun" ? member.color : "#f0f0f0", color: text.trim() ? "white" : undefined, fontSize: "18px", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          {openPanel === "fun" ? "×" : "😊"}
+          {openPanel === "fun" ? "×" : text.trim() ? "➤" : "😊"}
         </button>
 
         {/* 送信ボタン */}
